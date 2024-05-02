@@ -1,9 +1,19 @@
 #!/bin/bash
 
 clear
-
+echo "Gathering Details"
 # Prompt for the target if not already set
 target=$(zenity --entry --text "What is your target website?" --title "Set Target Variable" 2>/dev/null)
+
+# Tidy up URL
+if [[ $target == http://* ]]; then
+    target="${target#http://}"
+elif [[ $target== https://* ]] then
+    target="${target#https://}"
+fi
+if [[ $target == */ ]]; then
+    target="${target%/}"
+fi
 
 # Exit if no target is set
 if [ -z "$target" ]; then
@@ -13,12 +23,13 @@ fi
 
 echo "You have chosen: $target"
 
+http_status=$(curl -s -o /dev/null -w "%{http_code}" "$protocol://$target")
 # Check if website needs authorized access
-if [(curl -s -o /dev/null -w "%{http_code}" $target) == "401"]; then
+if [[ "$http_status" == "401" ]] || [[ "$http_status" == "403" ]]; then
     username=$(zenity --entry --text "What is the username?" --title "Set Username" 2>/dev/null)
     password=$(zenity --entry --text "What is the password?" --title "Set Password" 2>/dev/null)
     login="$username:$password@"
-elif; then
+else
     login=""
 fi 
 
@@ -32,8 +43,7 @@ if [ -z "$protocol" ]; then
 fi
 
 echo "Protocol selected: $protocol"
-
-temp_output=$(mktemp)
+echo "Initializing Fuzz"
 
 # Run ffuf for a short duration to gather initial data
 ffuf -u $protocol"://"$login$target"/FUZZ" -w ~/wordlists/common.txt -mc 100-299,500-599
