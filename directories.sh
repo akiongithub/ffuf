@@ -33,7 +33,8 @@ if [ -z "$protocol" ]; then
     exit 1
 fi
 
-http_status=$(curl -s -o /dev/null -w "%{http_code}" "$target")
+http_status=$(curl -s -o /dev/null -w "%{http_code}" "$protocol://$target")
+echo "$http_status"
 # Check if website needs authorized access
 if [[ "$http_status" == "401" ]] || [[ "$http_status" == "403" ]]; then
     username=$(zenity --entry --text "What is the username?" --title "Set Username" 2>/dev/null)
